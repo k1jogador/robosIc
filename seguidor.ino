@@ -70,6 +70,10 @@ void loop() {
         // Segue em frente se o sensor central está na linha
         f_Motor(MOTOR_DIREITO, 1, 128);
         f_Motor(MOTOR_ESQUERDO, 1, 128);
+    } else if (esqExt && dirExt) {
+        // Se ambos sensores extremos detectam linha, o robô pode estar em um cruzamento ou zigue-zague
+        f_Motor(MOTOR_DIREITO, 1, 200);  // Aumenta a velocidade do motor direito
+        f_Motor(MOTOR_ESQUERDO, 1, 200); // Aumenta a velocidade do motor esquerdo
     } else if (esqExt) {
         // Desvio grande para a esquerda: motor direito para frente, motor esquerdo para trás (sensor extrema esqueda detecta linha)
         f_Motor(MOTOR_DIREITO, 1, 200);
