@@ -70,14 +70,6 @@ void loop() {
         // Segue em frente se o sensor central está na linha
         f_Motor(MOTOR_DIREITO, 1, 128);
         f_Motor(MOTOR_ESQUERDO, 1, 128);
-    } else if (esq) {
-        // Ajusta para a esquerda (sensor esquerdo detecta linha)
-        f_Motor(MOTOR_DIREITO, 1, 160);
-        f_Motor(MOTOR_ESQUERDO, 1, 100);
-    } else if (dir) {
-        // Ajusta para a direita (sensor direito detecta linha)
-        f_Motor(MOTOR_DIREITO, 1, 100);
-        f_Motor(MOTOR_ESQUERDO, 1, 160);
     } else if (esqExt) {
         // Desvio grande para a esquerda: motor direito para frente, motor esquerdo para trás (sensor extrema esqueda detecta linha)
         f_Motor(MOTOR_DIREITO, 1, 200);
@@ -86,6 +78,14 @@ void loop() {
         // Desvio grande para a direita: motor esquerdo para frente, motor direito para trás (sensor extrema direita detecta a linha)
         f_Motor(MOTOR_DIREITO, 0, 100);
         f_Motor(MOTOR_ESQUERDO, 1, 200);
+    } else if (esq) {
+        // Ajusta para a esquerda (sensor esquerdo detecta linha)
+        f_Motor(MOTOR_DIREITO, 1, 160);
+        f_Motor(MOTOR_ESQUERDO, 1, 100);
+    } else if (dir) {
+        // Ajusta para a direita (sensor direito detecta linha)
+        f_Motor(MOTOR_DIREITO, 1, 100);
+        f_Motor(MOTOR_ESQUERDO, 1, 160);
     } else {
         // Se nenhum sensor detecta linha, para os motores
         f_Motor(MOTOR_DIREITO, 1, 0);
