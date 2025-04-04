@@ -1,129 +1,139 @@
 // Definições de pinos
-#define pinMotorDireitoBack 9    // Pino PWM para mover o motor direito para trás
-#define pinMotorDireitoFront 10  // Pino PWM para mover o motor direito para frente
-#define pinMotorEsquerdoBack 5   // Pino PWM para mover o motor esquerdo para trás
+#define pinMotorDireitoBack 11   // Pino PWM para mover o motor direito para trás
+#define pinMotorDireitoFront 9   // Pino PWM para mover o motor direito para frente
+#define pinMotorEsquerdoBack 10  // Pino PWM para mover o motor esquerdo para trás
 #define pinMotorEsquerdoFront 6  // Pino PWM para mover o motor esquerdo para frent
 
-#define sensor0 A0 // Pino de leitura do Sensor SHARP esquerdo
-#define sensor1 A1 // Pino de leitura do Sensor SHARP direito
+#define sensor0 A0  // Pino de leitura do Sensor SHARP esquerdo
+#define sensor1 A1  // Pino de leitura do Sensor SHARP direito
 
-int sharpEsq;
-int sharpDir;
-
-#define tcrt0 13 // pino logico sensor infravermelhor FRENTE ESQUERDA
-#define tcrt1 12 // pino logico sensor infravermelhor FRENTE DIREITA
-#define tcrt2 8  // pino logico sensor infravermelhor TRAS ESQUERDA
-#define tcrt3 7  // pino logico sensor infravermelhor TRAS DIREITA
+#define infraFEsq A2  // pino logico sensor infravermelhor FRENTE ESQUERDA
+#define infraFDir A3  // pino logico sensor infravermelhor FRENTE DIREITA
+#define infraT A4     // pino logico sensor infravermelhor TRAS
 
 // Índices para identificar os motores
 #define MOTOR_DIREITO 0
 #define MOTOR_ESQUERDO 1
 
-// termos param funcao MOTOr
+// Termos para funcao MOTOR
 #define TRAS 0
 #define FRENTE 1
 
-int tcrts[4] = {tcrt0,tcrt1,tcrt2,tcrt3};
-int tcrtsAction[4][2] = { {MOTOR_ESQUERDO , 0} , {MOTOR_DIREITO , 0} , {MOTOR_ESQUERDO , 1} , {MOTOR_DIREITO , 1} };
+int sharpEsq;
+int sharpDir;
 
+#define LIMITE_OPONENTE 170
+#define AJUSTE 5
 
+void moverMotor(int motor, int direcao, int velocidade) {
+  if (motor == MOTOR_DIREITO) {
+    if (direcao == FRENTE) {
+      analogWrite(pinMotorDireitoFront, velocidade);
+      analogWrite(pinMotorDireitoBack, 0);
 
-
-// listas contendo os pinos de a cada motor
-int pinsMotorDir[2] = {pinMotorDireitoBack, pinMotorDireitoFront}; // Pinos do motor direito
-int pinsMotorEsq[2] = {pinMotorEsquerdoBack, pinMotorEsquerdoFront}; // Pinos do motor esquerdo
-
-
-void f_Motor(int ladoMotor, int direcao, int velocidade) {
-    // ladoMotor = qual motor será controlado: 0 (esquerdo) ou 1 (direito).
-    // direcao qual direcao o motor deve girar: 0 (trás) ou 1 (frente).
-    // velocidade do motor (0 à 255)
-
-    // Seleciona o conjunto correto de pinos baseado no lado do motor
-    int* pins = (ladoMotor == MOTOR_ESQUERDO) ? pinsMotorEsq : pinsMotorDir;
-
-    // Ativa o pino correspondente à direção e desativa o oposto
-    analogWrite(pins[direcao], velocidade);      // Define a velocidade no pino de direção
-    analogWrite(pins[abs(1 - direcao)], 0);           // Garante que o pino oposto esteja desativado
+    } else {
+      analogWrite(pinMotorDireitoFront, 0);
+      analogWrite(pinMotorDireitoBack, velocidade);
+    }
+  } else if (motor == MOTOR_ESQUERDO) {
+    if (direcao == FRENTE) {
+      analogWrite(pinMotorEsquerdoFront, velocidade);
+      analogWrite(pinMotorEsquerdoBack, 0);
+    } else {
+      analogWrite(pinMotorEsquerdoFront, 0);
+      analogWrite(pinMotorEsquerdoBack, velocidade);
+    }
+  }
 }
 
-int calcDistance(int sensor) {
-    int leitura = analogRead(sensor);
-    int distancia = 10650.08 * pow(leitura, -0.935) - 10;
-    return constrain(distancia, 0, 150); // Limita a distância entre 0 e 150 cm
-}
+// Função de radar (mapeamento de oponente)
+void radar() {
+  moverMotor(MOTOR_DIREITO, FRENTE, 255);
+  moverMotor(MOTOR_ESQUERDO, TRAS, 255);
 
 void setup() {
-    // define os pinos dos motores como saída
-    pinMode(pinMotorDireitoBack, OUTPUT);
-    pinMode(pinMotorDireitoFront, OUTPUT);
-    pinMode(pinMotorEsquerdoBack, OUTPUT);
-    pinMode(pinMotorEsquerdoFront, OUTPUT);
+  // Define os pinos dos motores como saída
+  pinMode(pinMotorDireitoBack, OUTPUT);
+  pinMode(pinMotorDireitoFront, OUTPUT);
+  pinMode(pinMotorEsquerdoBack, OUTPUT);
+  pinMode(pinMotorEsquerdoFront, OUTPUT);
 
+  // Define os pinos dos sensores como entrada
+  pinMode(sensor0, INPUT);
+  pinMode(sensor1, INPUT);
+  pinMode(infraFEsq, INPUT);
+  pinMode(infraFDir, INPUT);
+  pinMode(infraT, INPUT);
 
-    // define os pinos dos sensores como entrada
-    pinMode(sensor0, INPUT);
-    pinMode(sensor1, INPUT);
-
-    // define os pinos dos sensores como entrada (detecta chao)
-    pinMode(tcrt0, INPUT);
-    pinMode(tcrt1, INPUT);
-    pinMode(tcrt2, INPUT);
-    pinMode(tcrt3, INPUT);
-
-    f_Motor(MOTOR_ESQUERDO, 1 , 255);
-    f_Motor(MOTOR_DIREITO, 1 , 255);
-    delay(500);
-    f_Motor(MOTOR_ESQUERDO, 1 , 0);
-    f_Motor(MOTOR_DIREITO, 1 , 0);
+  // Energiza os sensores de baixo
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
 }
 
-
-
-char ultimoLado = 'e';
-
-void radar(){
-
-  if (ultimoLado == 'e'){
-    f_Motor(MOTOR_DIREITO , FRENTE , 255);
-    f_Motor(MOTOR_ESQUERDO , TRAS , 255);
-  } else {
-    f_Motor(MOTOR_ESQUERDO , FRENTE , 255);
-    f_Motor(MOTOR_DIREITO , TRAS , 255);
-  }
-   
-}
-
-
+int muitoProx = 0;
+bool canto = false;
 
 void loop() {
-    // Variáveis locais para armazenar as leituras dos sensores
-    int sharpEsq = calcDistance(sensor0);
-    int sharpDir = calcDistance(sensor1);
+  // Lê os valores dos sensores
+  delay(50);
+  moverMotor(MOTOR_DIREITO, FRENTE, 0);
+  moverMotor(MOTOR_ESQUERDO, TRAS, 0);
 
-    // Constantes de controle
-    const int limiteDistancia = 80;
-    const int ajuste = 5;
+  int sharpEsq = analogRead(sensor0);
+  int sharpDir = analogRead(sensor1);
 
-    // Registrar o último lado mais próximo
-    if (sharpEsq < sharpDir && sharpEsq <= limiteDistancia) {
-        ultimoLado = 'e';
-    } else if (sharpDir < sharpEsq && sharpDir <= limiteDistancia) {
-        ultimoLado = 'd';
-    }
+  bool iFE = digitalRead(infraFEsq);
+  bool iFD = digitalRead(infraFDir);
+  bool iT = digitalRead(infraT);
 
-    // Controle de movimentação
-    if (sharpEsq <= limiteDistancia || sharpDir <= limiteDistancia) {
-        int velocidadeEsq = 255, velocidadeDir = 255;
+  if (!iFE || !iFD) {
+    canto = true;
+    moverMotor(MOTOR_DIREITO, TRAS, 255);
+    moverMotor(MOTOR_ESQUERDO, TRAS, 255);
+    delay(100);
+  }
+  if (!iT) {
+    canto = true;
+    moverMotor(MOTOR_DIREITO, FRENTE, 255);
+    moverMotor(MOTOR_ESQUERDO, FRENTE, 255);
+    delay(100);
+  }
 
-        if (abs(sharpEsq - sharpDir) > ajuste) {
-            if (sharpEsq > sharpDir) velocidadeEsq = max(0, 255 - (sharpEsq - sharpDir));
-            else velocidadeDir = max(0, 255 - (sharpDir - sharpEsq));
+  if (canto == false) {
+    if ((sharpEsq < 170) && (sharpDir < 170)) {
+      moverMotor(MOTOR_DIREITO, FRENTE, 255);
+      moverMotor(MOTOR_ESQUERDO, TRAS, 255);
+    } else {
+      // Controle de movimentação
+      if (sharpEsq > LIMITE_OPONENTE && sharpDir > LIMITE_OPONENTE) {
+        int velocidadeEsq = 255;
+        int velocidadeDir = 255;
+
+        if (sharpEsq < (sharpDir + 40)) {
+          velocidadeEsq = 200;
+
+        } else if (sharpDir < (sharpEsq + 40)) {
+          velocidadeDir = 200;
         }
 
-        f_Motor(MOTOR_ESQUERDO, FRENTE, velocidadeEsq);
-        f_Motor(MOTOR_DIREITO, FRENTE, velocidadeDir);
-    } else {
-        radar();
+        if (muitoProx >= 200) {
+          Serial.print(muitoProx);
+          moverMotor(MOTOR_DIREITO, TRAS, 255);
+          moverMotor(MOTOR_ESQUERDO, TRAS, 255);
+          delay(300);
+          muitoProx = 0;
+        }
+        if ((sharpEsq > 320) || (sharpDir > 320)) {
+          muitoProx = muitoProx + 1;
+          Serial.print("p");
+        } else {
+          muitoProx = 0;
+        }
+
+        moverMotor(MOTOR_DIREITO, FRENTE, velocidadeDir);
+        moverMotor(MOTOR_ESQUERDO, FRENTE, velocidadeEsq);
+      }
     }
+  }
+  canto = false;
 }
